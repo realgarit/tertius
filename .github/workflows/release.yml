@@ -92,8 +92,8 @@ jobs:
           if git diff --quiet; then
             echo "Cask already up to date."; exit 0
           fi
-          git config user.name "tertius-ci"
-          git config user.email "ci@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add Casks/tertius.rb
           git commit -m "tertius $VERSION"
           git push origin HEAD:main
