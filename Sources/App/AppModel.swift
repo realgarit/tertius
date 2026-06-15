@@ -20,6 +20,9 @@ final class AppModel {
     private let authorizer: AXAccessibilityAuthorizer
     private let launchAtLogin: ManageLaunchAtLoginUseCase
 
+    private var monitoring = false
+    private var trustTimer: Timer?
+
     let version: String
 
     init() {
@@ -41,11 +44,14 @@ final class AppModel {
         self.monitor = MonitorGesturesUseCase(input: input, actuator: actuator, settings: { store.settings })
     }
 
-    /// Start observing input once permission is in place.
+    /// Called at launch. Starts the monitor if already trusted; otherwise
+    /// prompts for Accessibility and polls until it is granted, then starts —
+    /// so the gesture works without relaunching.
     func start() {
-        refreshTrust()
-        if isTrusted {
-            monitor.start()
+        ensureMonitoring()
+        if !isTrusted {
+            authorizer.requestAccess()   // system prompt + adds us to the Accessibility list
+            startTrustPolling()
         }
     }
 
@@ -53,15 +59,41 @@ final class AppModel {
         isTrusted = authorizer.isTrusted
     }
 
-    /// Prompt for Accessibility, then (re)start if it was just granted.
+    /// User explicitly asked to grant: prompt and deep-link to the settings pane.
     func requestAccess() {
         authorizer.requestAccess()
-        refreshTrust()
-        if isTrusted { monitor.start() }
+        authorizer.openAccessibilitySettings()
+        ensureMonitoring()
+        if !isTrusted { startTrustPolling() }
     }
 
     func openAccessibilitySettings() {
         authorizer.openAccessibilitySettings()
+    }
+
+    /// Start the gesture monitor exactly once, when trust is in place.
+    func ensureMonitoring() {
+        refreshTrust()
+        guard isTrusted, !monitoring else { return }
+        monitor.start()
+        monitoring = true
+    }
+
+    /// Poll for the trust grant (which happens asynchronously in System
+    /// Settings) and start monitoring the moment it lands.
+    private func startTrustPolling() {
+        trustTimer?.invalidate()
+        trustTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.pollTrust() }
+        }
+    }
+
+    private func pollTrust() {
+        ensureMonitoring()
+        if isTrusted {
+            trustTimer?.invalidate()
+            trustTimer = nil
+        }
     }
 
     private func update(_ mutate: (inout AppSettings) -> Void) {

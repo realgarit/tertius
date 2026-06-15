@@ -52,7 +52,7 @@ struct SettingsView: View {
                         .foregroundStyle(model.isTrusted ? .green : .orange)
                     Spacer()
                     if !model.isTrusted {
-                        Button("Open Settings…") { model.openAccessibilitySettings() }
+                        Button("Grant…") { model.requestAccess() }
                     }
                 }
             }
