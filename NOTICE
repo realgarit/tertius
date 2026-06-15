@@ -1,0 +1,20 @@
+tertius — third-party notices
+=============================
+
+tertius is licensed under the MIT License (see LICENSE).
+
+It reuses ideas from, and/or adapts code from, the following MIT-licensed
+projects. Their copyright notices are preserved here as required:
+
+- MiddleClicker by fordft168 — https://github.com/fordft168/MiddleClicker (MIT)
+  Adapted: the CGEventTap modifier-interception and middle-button drag-state
+  pattern (mapping pointer events to synthetic middle-button events).
+
+- threefingers by geongeorge — https://github.com/geongeorge/threefingers (MIT)
+  Adapted: personal Homebrew tap layout and release scripting patterns.
+
+Reference only — NO source code copied:
+
+- MiddleClick by artginzburg — https://github.com/artginzburg/MiddleClick (GPL-3.0)
+  Used only for configuration defaults and UX ideas. No source from this
+  GPL-3.0 project is included; copying it would force tertius to GPL-3.0.
