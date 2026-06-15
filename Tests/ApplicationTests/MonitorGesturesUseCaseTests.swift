@@ -39,7 +39,9 @@ struct MonitorGesturesUseCaseTests {
     func drivesActuator() {
         let input = FakeInputSource()
         let actuator = FakePointerActuator()
-        let uc = MonitorGesturesUseCase(input: input, actuator: actuator, settings: { .default })
+        var unit = AppSettings.default
+        unit.sensitivity = 1.0 // 1:1 deltas for a clear assertion
+        let uc = MonitorGesturesUseCase(input: input, actuator: actuator, settings: { unit })
         uc.start()
 
         _ = input.emit(scroll(.began))

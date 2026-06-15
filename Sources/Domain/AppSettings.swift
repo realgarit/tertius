@@ -35,19 +35,22 @@ public struct AppSettings: Sendable, Equatable, Codable {
     /// this range; ``clampedSensitivity`` enforces it for any value (e.g. one
     /// loaded from disk) so a 0 or negative value can never produce a dead or
     /// silently inverted drag.
-    public static let sensitivityRange: ClosedRange<Double> = 0.1...10.0
+    public static let sensitivityRange: ClosedRange<Double> = 0.1...30.0
 
     /// ``sensitivity`` clamped into ``sensitivityRange``. Always positive.
     public var clampedSensitivity: Double {
         min(max(sensitivity, Self.sensitivityRange.lowerBound), Self.sensitivityRange.upperBound)
     }
 
-    /// Sensible defaults: enabled, ⌥ modifier, two-finger drag, neutral sensitivity.
+    /// Sensible defaults: enabled, ⌥ modifier, two-finger drag. The sensitivity
+    /// default is tuned for orbit feel — trackpad scroll deltas are small, so a
+    /// neutral 1× felt sluggish; 5× is a snappier starting point (adjustable up
+    /// to 30× in Settings).
     public static let `default` = AppSettings(
         enabled: true,
         modifier: .option,
         inputMode: .twoFingerDrag,
-        sensitivity: 1.0,
+        sensitivity: 5.0,
         invertX: false,
         invertY: false,
         launchAtLogin: false
