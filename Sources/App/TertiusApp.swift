@@ -48,8 +48,14 @@ struct MenuContent: View {
             Divider()
         }
 
-        Button("Settings…") { openSettings() }
-            .keyboardShortcut(",")
+        Button("Settings…") {
+            // An accessory (LSUIElement) app can't foreground itself, so the
+            // Settings window opens hidden behind everything. Activate first,
+            // then open, so it actually appears and takes focus.
+            NSApp.activate(ignoringOtherApps: true)
+            openSettings()
+        }
+        .keyboardShortcut(",")
 
         Divider()
 
