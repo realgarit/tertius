@@ -1,0 +1,21 @@
+# SwiftPM / Xcode
+.build/
+.swiftpm/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Build output
+build/
+dist/
+
+# Signing material — never commit private keys
+*.p12
+*.cer
+*.pem
+*.key
+*.certSigningRequest
+secrets/
+
+# macOS
+.DS_Store
