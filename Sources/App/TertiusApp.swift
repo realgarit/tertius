@@ -44,7 +44,7 @@ struct MenuContent: View {
 
         if !model.isTrusted {
             Text("Accessibility permission required")
-            Button("Open Accessibility Settings…") { model.openAccessibilitySettings() }
+            Button("Grant Accessibility…") { model.requestAccess() }
             Divider()
         }
 
