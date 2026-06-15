@@ -27,9 +27,12 @@ let package = Package(
         ),
 
         // Composition root: MenuBarExtra app + Settings UI.
+        // The asset catalog is compiled into the .app by actool at packaging
+        // time (scripts/package-app.sh), not by SwiftPM, so it is excluded here.
         .executableTarget(
             name: "App",
-            dependencies: ["Application", "Infrastructure", "Domain"]
+            dependencies: ["Application", "Infrastructure", "Domain"],
+            exclude: ["Resources/Assets.xcassets"]
         ),
 
         .testTarget(name: "DomainTests", dependencies: ["Domain"]),
