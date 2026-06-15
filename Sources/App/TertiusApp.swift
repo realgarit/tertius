@@ -10,8 +10,9 @@ struct TertiusApp: App {
         MenuBarExtra {
             MenuContent(model: appDelegate.model)
         } label: {
-            // Template SF Symbol for M3; replaced by a custom template asset in M4.
-            Image(systemName: "cursorarrow.click.2")
+            // A monochrome template SF Symbol that adapts to light/dark menu bars;
+            // a plainer glyph signals when the middle-drag is disabled.
+            Image(systemName: appDelegate.model.settings.enabled ? "cursorarrow.click.2" : "cursorarrow")
         }
 
         Settings {
