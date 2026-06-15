@@ -14,11 +14,14 @@ final class AppModel {
     /// ``update(_:)`` so they persist; the monitor reads the same source.
     private(set) var settings: AppSettings
     private(set) var isTrusted: Bool
+    /// A human-readable update status, shown in the menu after a check.
+    private(set) var updateMessage: String?
 
     private let settingsStore: SettingsStore
     private let monitor: MonitorGesturesUseCase
     private let authorizer: AXAccessibilityAuthorizer
     private let launchAtLogin: ManageLaunchAtLoginUseCase
+    private let updateCheck: CheckForUpdatesUseCase
 
     private var monitoring = false
     private var trustTimer: Timer?
@@ -36,6 +39,10 @@ final class AppModel {
         self.isTrusted = auth.isTrusted
         self.launchAtLogin = ManageLaunchAtLoginUseCase(manager: SMAppServiceLaunchManager())
         self.version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+        self.updateCheck = CheckForUpdatesUseCase(
+            checker: GitHubReleasesUpdateChecker(),
+            currentVersion: self.version
+        )
 
         let input = ScrollGestureInputSource()
         let actuator = CGEventPointerActuator()
@@ -52,6 +59,26 @@ final class AppModel {
         if !isTrusted {
             authorizer.requestAccess()   // system prompt + adds us to the Accessibility list
             startTrustPolling()
+        }
+        // Quiet background check on launch — only surfaces a newer version.
+        Task { await runUpdateCheck(announceUpToDate: false) }
+    }
+
+    /// User-initiated check; reports the outcome either way.
+    func checkForUpdates() {
+        Task { await runUpdateCheck(announceUpToDate: true) }
+    }
+
+    private func runUpdateCheck(announceUpToDate: Bool) async {
+        do {
+            let result = try await updateCheck.check()
+            if result.isUpdateAvailable {
+                updateMessage = "Update available: v\(result.latest) — run brew upgrade"
+            } else if announceUpToDate {
+                updateMessage = "Up to date (v\(version))"
+            }
+        } catch {
+            if announceUpToDate { updateMessage = "Update check failed" }
         }
     }
 
