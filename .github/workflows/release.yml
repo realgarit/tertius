@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.1.2)"
+        required: true
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build, sign, release, bump cask
+    runs-on: macos-26
+    permissions:
+      contents: write # create the GitHub release on this repo
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Resolve & validate version
+        id: ver
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ -n "${INPUT_VERSION:-}" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="${REF_NAME#v}"
+          fi
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version '$VERSION' (expected X.Y.Z)"; exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Import signing certificate
+        env:
+          P12_BASE64: ${{ secrets.SIGNING_CERT_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          printf '%s' "$P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          export KEYCHAIN="$RUNNER_TEMP/tertius-ci.keychain-db"
+          scripts/import-cert.sh "$RUNNER_TEMP/signing.p12"
+          rm -f "$RUNNER_TEMP/signing.p12"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      - name: Build, sign, package (universal)
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          SIGN_IDENTITY="Tertius Self-Signed" KEYCHAIN="$KEYCHAIN" VERSION="$VERSION" \
+            APP_OUTPUT="$PWD/dist/Tertius.app" scripts/package-app.sh
+          codesign -v --strict "$PWD/dist/Tertius.app"
+          ditto -c -k --keepParent "$PWD/dist/Tertius.app" "$PWD/dist/Tertius.zip"
+          SHA="$(shasum -a 256 dist/Tertius.zip | awk '{print $1}')"
+          echo "SHA256=$SHA" >> "$GITHUB_ENV"
+
+      - name: Create / update GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            gh release upload "v$VERSION" dist/Tertius.zip --clobber
+          else
+            gh release create "v$VERSION" dist/Tertius.zip --title "v$VERSION" --generate-notes
+          fi
+
+      - name: Bump cask in homebrew-tap
+        env:
+          TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
+          VERSION: ${{ steps.ver.outputs.version }}
+          SHA256: ${{ env.SHA256 }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$TAP_DEPLOY_KEY" > ~/.ssh/tap_key
+          chmod 600 ~/.ssh/tap_key
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/tap_key -o StrictHostKeyChecking=accept-new"
+          git clone git@github.com:realgarit/homebrew-tap.git "$RUNNER_TEMP/tap"
+          cd "$RUNNER_TEMP/tap"
+          # The cask URL uses #{version}; only version + sha256 change.
+          perl -0pi -e 's/version "[^"]+"/version "'"$VERSION"'"/' Casks/tertius.rb
+          perl -0pi -e 's/sha256 "[0-9a-f]+"/sha256 "'"$SHA256"'"/' Casks/tertius.rb
+          if git diff --quiet; then
+            echo "Cask already up to date."; exit 0
+          fi
+          git config user.name "tertius-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add Casks/tertius.rb
+          git commit -m "tertius $VERSION"
+          git push origin HEAD:main
