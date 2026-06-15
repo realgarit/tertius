@@ -51,6 +51,12 @@ struct MenuContent: View {
         Button("Settings…") { openSettings() }
             .keyboardShortcut(",")
 
+        Divider()
+
+        if let updateMessage = model.updateMessage {
+            Text(updateMessage)
+        }
+        Button("Check for Updates…") { model.checkForUpdates() }
         Text("Tertius \(model.version)")
 
         Divider()

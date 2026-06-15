@@ -39,3 +39,9 @@ public protocol LaunchAtLoginManaging {
     var isEnabled: Bool { get }
     func setEnabled(_ enabled: Bool) throws
 }
+
+/// Fetches the latest released version string (e.g. "0.1.2"). Abstracts the
+/// GitHub Releases API. Sendable so the use case can run off the main actor.
+public protocol UpdateChecking: Sendable {
+    func latestVersion() async throws -> String
+}
