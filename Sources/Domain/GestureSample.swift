@@ -27,6 +27,11 @@ public struct GestureSample: Sendable, Equatable {
     /// True if this scroll event is part of the inertial momentum tail that
     /// arrives after the fingers lift. These must be ignored for dragging.
     public var isMomentum: Bool
+    /// True for pixel-based (continuous) scrolls — a trackpad or Magic Mouse.
+    /// False for a notched/line-based mouse wheel. Only continuous scrolls can
+    /// trigger orbit; a physical mouse wheel always passes through so ⌥ + wheel
+    /// keeps working in other apps.
+    public var isContinuous: Bool
     public var deltaX: Double
     public var deltaY: Double
     public var activeModifiers: Set<Modifier>
@@ -36,6 +41,7 @@ public struct GestureSample: Sendable, Equatable {
         kind: GestureKind,
         phase: ScrollPhase,
         isMomentum: Bool,
+        isContinuous: Bool,
         deltaX: Double,
         deltaY: Double,
         activeModifiers: Set<Modifier>,
@@ -44,6 +50,7 @@ public struct GestureSample: Sendable, Equatable {
         self.kind = kind
         self.phase = phase
         self.isMomentum = isMomentum
+        self.isContinuous = isContinuous
         self.deltaX = deltaX
         self.deltaY = deltaY
         self.activeModifiers = activeModifiers

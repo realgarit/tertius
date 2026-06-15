@@ -31,6 +31,17 @@ public struct AppSettings: Sendable, Equatable, Codable {
         self.launchAtLogin = launchAtLogin
     }
 
+    /// Valid range for ``sensitivity``. The settings UI constrains its slider to
+    /// this range; ``clampedSensitivity`` enforces it for any value (e.g. one
+    /// loaded from disk) so a 0 or negative value can never produce a dead or
+    /// silently inverted drag.
+    public static let sensitivityRange: ClosedRange<Double> = 0.1...10.0
+
+    /// ``sensitivity`` clamped into ``sensitivityRange``. Always positive.
+    public var clampedSensitivity: Double {
+        min(max(sensitivity, Self.sensitivityRange.lowerBound), Self.sensitivityRange.upperBound)
+    }
+
     /// Sensible defaults: enabled, ⌥ modifier, two-finger drag, neutral sensitivity.
     public static let `default` = AppSettings(
         enabled: true,

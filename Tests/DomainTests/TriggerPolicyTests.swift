@@ -5,7 +5,7 @@ import Testing
 struct TriggerPolicyTests {
     private func sample(_ modifiers: Set<Modifier>) -> GestureSample {
         GestureSample(
-            kind: .scroll, phase: .began, isMomentum: false,
+            kind: .scroll, phase: .began, isMomentum: false, isContinuous: true,
             deltaX: 0, deltaY: 0, activeModifiers: modifiers, timestamp: 0
         )
     }
