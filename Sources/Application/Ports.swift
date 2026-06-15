@@ -33,3 +33,9 @@ public protocol AccessibilityAuthorizing {
     /// Prompt the user and/or deep-link to System Settings.
     func requestAccess()
 }
+
+/// Manages the macOS "launch at login" registration. Abstracts `SMAppService`.
+public protocol LaunchAtLoginManaging {
+    var isEnabled: Bool { get }
+    func setEnabled(_ enabled: Bool) throws
+}
