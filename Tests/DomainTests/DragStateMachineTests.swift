@@ -38,6 +38,14 @@ struct DragStateMachineTests {
         )
     }
 
+    /// Settings with 1× sensitivity, so delta assertions read 1:1 regardless of
+    /// the shipped default.
+    private var unit: AppSettings {
+        var s = AppSettings.default
+        s.sensitivity = 1.0
+        return s
+    }
+
     @Test("modifier held + scroll began → middle-button down, event swallowed, now dragging")
     func beganWithModifierStartsDrag() {
         var sm = DragStateMachine()
@@ -51,9 +59,9 @@ struct DragStateMachineTests {
     @Test("while dragging, scroll changed → middle-drag with the deltas, swallowed")
     func changedWhileDraggingDrags() {
         var sm = DragStateMachine()
-        _ = sm.handle(scroll(.began), settings: .default)
+        _ = sm.handle(scroll(.began), settings: unit)
 
-        let r = sm.handle(scroll(.changed, dx: 4, dy: -3), settings: .default)
+        let r = sm.handle(scroll(.changed, dx: 4, dy: -3), settings: unit)
 
         #expect(r.command == .middleDrag(dx: 4, dy: -3))
         #expect(r.swallowEvent == true)
@@ -75,10 +83,10 @@ struct DragStateMachineTests {
     @Test("full sequence began→changed→changed→ended produces down, drags, up")
     func fullSequence() {
         var sm = DragStateMachine()
-        let down = sm.handle(scroll(.began), settings: .default)
-        let d1 = sm.handle(scroll(.changed, dx: 2, dy: 2), settings: .default)
-        let d2 = sm.handle(scroll(.changed, dx: 1, dy: 0), settings: .default)
-        let up = sm.handle(scroll(.ended), settings: .default)
+        let down = sm.handle(scroll(.began), settings: unit)
+        let d1 = sm.handle(scroll(.changed, dx: 2, dy: 2), settings: unit)
+        let d2 = sm.handle(scroll(.changed, dx: 1, dy: 0), settings: unit)
+        let up = sm.handle(scroll(.ended), settings: unit)
 
         #expect(down.command == .middleDown)
         #expect(d1.command == .middleDrag(dx: 2, dy: 2))
@@ -174,6 +182,7 @@ struct DragStateMachineTests {
     @Test("invertX and invertY flip the respective axes")
     func inversionFlipsAxes() {
         var settings = AppSettings.default
+        settings.sensitivity = 1.0
         settings.invertX = true
         settings.invertY = true
         var sm = DragStateMachine()

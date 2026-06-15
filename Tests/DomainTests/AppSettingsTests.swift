@@ -10,7 +10,7 @@ struct AppSettingsTests {
         #expect(d.enabled == true)
         #expect(d.modifier == .option)
         #expect(d.inputMode == .twoFingerDrag)
-        #expect(d.sensitivity == 1.0)
+        #expect(d.sensitivity == 5.0)
         #expect(d.invertX == false)
         #expect(d.invertY == false)
         #expect(d.launchAtLogin == false)
