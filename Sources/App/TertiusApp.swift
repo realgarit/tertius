@@ -10,9 +10,11 @@ struct TertiusApp: App {
         MenuBarExtra {
             MenuContent(model: appDelegate.model)
         } label: {
-            // A monochrome template SF Symbol that adapts to light/dark menu bars;
-            // a plainer glyph signals when the middle-drag is disabled.
-            Image(systemName: appDelegate.model.settings.enabled ? "cursorarrow.click.2" : "cursorarrow")
+            // A monochrome mouse glyph echoing the app icon, drawn as a template
+            // image so it adapts to light/dark menu bars (and inverts when open).
+            // The middle button is solid when enabled, hollow when disabled.
+            Image(nsImage: MenuBarIcon.image(enabled: appDelegate.model.settings.enabled))
+                .renderingMode(.template)
         }
 
         Settings {
