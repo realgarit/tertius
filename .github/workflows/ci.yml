@@ -14,7 +14,7 @@ jobs:
     # macOS 26 SDK is required for the .macOS(.v26) deployment target.
     runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Toolchain info
         run: |
