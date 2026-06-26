@@ -58,6 +58,17 @@ Read with `event.getIntegerValueField(_:)` (→ `Int64`) / `getDoubleValueField(
 - Build: `CGEvent(mouseEventSource:nil, mouseType:.otherMouseDown, mouseCursorPosition:pt, mouseButton:.center)`
   then `event.setIntegerValueField(.mouseEventButtonNumber, value: 2)` and `event.post(tap: .cgSessionEventTap)`.
   (`mouseButton` is only honored for the `otherMouse*` types.)
+- **Motion deltas (required for drag)** — set `.mouseEventDeltaX` (4) /
+  `.mouseEventDeltaY` (5) on each `.otherMouseDragged`. These integer fields are
+  what `[NSEvent deltaX/deltaY]` exposes and what apps read for *relative* motion
+  (Godot orbit). Our gesture is a two-finger scroll, so the real cursor never
+  travels and these default to **0** — the target then orbits by nothing even
+  though the button is held. Setting `mouseCursorPosition` alone is not enough for
+  relative-motion consumers. Accumulate sub-pixel scroll deltas in a `Double`
+  running position and emit `round(pos) − round(prevPos)` per event so slow
+  glides tick over instead of rounding away. (Warping the cursor with
+  `CGWarpMouseCursorPosition` is optional and unnecessary once the deltas are set;
+  it also incurs a ~250 ms post-warp delta-suppression window.)
 - Current cursor: `CGEvent(source: nil)?.location` (CGPoint, global **top-left**
   display coordinates — same space as the synthetic events). `NSEvent.mouseLocation`
   is bottom-left, so prefer the CGEvent location to avoid a flip.
