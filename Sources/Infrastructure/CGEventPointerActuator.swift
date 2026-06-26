@@ -5,7 +5,12 @@ import Application
 /// Builds synthetic middle-button (`otherMouse*`, button 2 = center) events.
 /// Factored out so the construction is unit-testable without posting.
 public enum MiddleButtonEventFactory {
-    public static func make(type: CGEventType, at point: CGPoint, source: CGEventSource?) -> CGEvent? {
+    public static func make(
+        type: CGEventType,
+        at point: CGPoint,
+        delta: CGVector = .zero,
+        source: CGEventSource?
+    ) -> CGEvent? {
         guard let event = CGEvent(
             mouseEventSource: source,
             mouseType: type,
@@ -14,6 +19,13 @@ public enum MiddleButtonEventFactory {
         ) else { return nil }
         // Explicit for robustness — the middle button is button number 2.
         event.setIntegerValueField(.mouseEventButtonNumber, value: 2)
+        // The per-event motion. A real middle-drag carries its movement in these
+        // fields (what `[NSEvent deltaX/deltaY]` reads). A two-finger glide is a
+        // scroll: the system cursor never travels, so without this the target app
+        // reads deltaX/deltaY = 0 and orbits by nothing. Integer-valued fields,
+        // matching real hardware (sub-pixel motion is accumulated by the caller).
+        event.setIntegerValueField(.mouseEventDeltaX, value: Int64(delta.dx.rounded()))
+        event.setIntegerValueField(.mouseEventDeltaY, value: Int64(delta.dy.rounded()))
         return event
     }
 }
@@ -45,15 +57,24 @@ public final class CGEventPointerActuator: PointerActuator {
             position = cursorLocation()
             postEvent(.otherMouseDown)
         case let .middleDrag(dx, dy):
+            let previous = position
             position = CGPoint(x: position.x + dx, y: position.y + dy)
-            postEvent(.otherMouseDragged)
+            // The motion this event carries. Rounding the running position
+            // (rather than each raw delta) preserves sub-pixel glides: several
+            // 0.4px steps still add up to whole-pixel motion instead of each
+            // rounding to zero and stalling a slow orbit.
+            let delta = CGVector(
+                dx: position.x.rounded() - previous.x.rounded(),
+                dy: position.y.rounded() - previous.y.rounded()
+            )
+            postEvent(.otherMouseDragged, delta: delta)
         case .middleUp:
             postEvent(.otherMouseUp)
         }
     }
 
-    private func postEvent(_ type: CGEventType) {
-        guard let event = MiddleButtonEventFactory.make(type: type, at: position, source: source) else { return }
+    private func postEvent(_ type: CGEventType, delta: CGVector = .zero) {
+        guard let event = MiddleButtonEventFactory.make(type: type, at: position, delta: delta, source: source) else { return }
         post(event)
     }
 }
