@@ -1,14 +1,15 @@
+# Routine version updates wait seven days; security fixes are not delayed.
 version: 2
 updates:
 - package-ecosystem: github-actions
   directory: /
-  schedule: &id001
+  schedule:
     interval: weekly
     day: monday
     time: 06:00
     timezone: Europe/Zurich
   open-pull-requests-limit: 3
-  groups: &id002
+  groups:
     minor-and-patch:
       patterns:
       - '*'
@@ -22,8 +23,29 @@ updates:
       update-types:
       - minor
       - patch
+  cooldown:
+    default-days: 7
 - package-ecosystem: swift
   directory: /
-  schedule: *id001
+  schedule:
+    interval: weekly
+    day: monday
+    time: 06:00
+    timezone: Europe/Zurich
   open-pull-requests-limit: 3
-  groups: *id002
+  groups:
+    minor-and-patch:
+      patterns:
+      - '*'
+      update-types:
+      - minor
+      - patch
+    security-minor-and-patch:
+      applies-to: security-updates
+      patterns:
+      - '*'
+      update-types:
+      - minor
+      - patch
+  cooldown:
+    default-days: 7
