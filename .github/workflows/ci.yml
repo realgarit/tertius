@@ -3,6 +3,8 @@ name: CI
 on:
   push:
   pull_request:
+  # dependabot-automerge starts this on main after its merge.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
